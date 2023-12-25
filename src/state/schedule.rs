@@ -49,7 +49,7 @@ pub struct Event {
 pub struct PersonId(Uuid);
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct Person {
+pub struct Person {
     pub id: PersonId,
     pub name: String,
 }
@@ -59,11 +59,18 @@ impl Schedule {
         Ok(Self::placeholder())
     }
 
+    /// Returns a placeholder schedule with only one event.
     pub fn placeholder() -> Self {
-        let person_id = PersonId(Uuid::max());
+        let person_id = PersonId(Uuid::nil());
         let person = Person {
             id: person_id,
             name: "Semi-non-professional yak shaver".to_string(),
+        };
+
+        let another_person_id = PersonId(Uuid::max());
+        let another_person = Person {
+            id: another_person_id,
+            name: "Completely inaccurate fractal".to_string(),
         };
 
         let event_id = EventId(Uuid::nil());
@@ -83,12 +90,14 @@ impl Schedule {
             url: "https://example.com".to_string(),
             feedback_url: "https://example.com".to_string(),
             links: BTreeMap::new(),
-            persons: Vec::new(),
+            persons: vec![person_id, another_person_id],
         };
 
         Self {
             events: [(event_id, event)].into_iter().collect(),
-            persons: [(person_id, person)].into_iter().collect(),
+            persons: [(person_id, person), (another_person_id, another_person)]
+                .into_iter()
+                .collect(),
             time_map: [(event_start, vec![event_id])].into_iter().collect(),
         }
     }
@@ -102,15 +111,29 @@ impl Schedule {
             .first()
             .expect("time map must be consistent with events");
 
-        Some(self.lookup(id))
+        Some(self.resolve_event(id))
     }
 
-    fn lookup(&self, id: &EventId) -> &Event {
-        // theoretically it's possible to accidentally use an EventId for another schedule in here
-        // though we never construct another schedule in-app and this function is only called for EventIds contained in this schedule
+    /// Return the corresponding [`Event`] for the given [`EventId`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given [`EventId`] is not from this schedule.
+    pub fn resolve_event(&self, id: &EventId) -> &Event {
         self.events
             .get(id)
-            .expect("schedule to be immutable once constructed")
+            .expect("EventId to be from the current schedule")
+    }
+
+    /// Return the corresponding [`Person`] for the given [`PersonId`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given [`PersonId`] is not from this schedule.
+    pub fn resolve_person(&self, id: &PersonId) -> &Person {
+        self.persons
+            .get(id)
+            .expect("PersonId to be from the current schedule")
     }
 }
 

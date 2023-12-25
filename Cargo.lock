@@ -58,7 +58,6 @@ checksum = "f476fe445d41c9e991fd07515a6f463074b782242ccf4a5b7b1d1012e70824df"
 dependencies = [
  "bitflags 2.4.1",
  "crossterm_winapi",
- "futures-core",
  "libc",
  "mio",
  "parking_lot",
@@ -102,12 +101,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "futures-core"
-version = "0.3.29"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb1d22c66e66d9d72e1758f0bd7d4fd0bee04cad842ee34587d68c07e45d088c"
-
-[[package]]
 name = "hashbrown"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -141,6 +134,7 @@ version = "0.1.0"
 dependencies = [
  "crossterm",
  "eyre",
+ "itertools",
  "ratatui",
  "time",
  "uuid",

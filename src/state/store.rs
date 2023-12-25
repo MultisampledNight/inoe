@@ -33,9 +33,8 @@ impl State {
         let first_event = schedule
             .first()
             .context("schedule is empty, nothing to display")?;
-        let view = View::GridOverview {
-            scroll_at: first_event.start,
-            selected: first_event.id,
+        let view = View::SingleDetails {
+            current: first_event.id,
         };
 
         Ok(Self { schedule, view })
@@ -50,7 +49,7 @@ pub enum View {
         /// What event is currently selected and would be viewed if switched into [`View::Single`] mode.
         selected: EventId,
     },
-    Single {
+    SingleDetails {
         /// What event is currently viewed.
         current: EventId,
     },

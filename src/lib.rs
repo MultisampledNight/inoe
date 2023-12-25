@@ -27,7 +27,8 @@ impl App {
 
     pub fn run(mut self) -> Result<()> {
         loop {
-            let action = self.ui.frame()?;
+            let state = self.dispatcher.store.state();
+            let action = self.ui.frame(state)?;
 
             if let Some(action) = action {
                 let should_exit = matches!(action, Action::Exit);

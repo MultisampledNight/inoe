@@ -7,7 +7,7 @@ use crate::Action;
 use store::Store;
 
 pub struct Dispatcher {
-    store: Store,
+    pub store: Store,
 }
 
 impl Dispatcher {
