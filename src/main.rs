@@ -1,5 +1,6 @@
 use eyre::Result;
 
-fn main() -> Result<()> {
-    inoe::run()
+#[tokio::main]
+async fn main() -> Result<()> {
+    inoe::run().await
 }
