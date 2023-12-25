@@ -70,10 +70,14 @@ impl Ui {
         let View::SingleDetails { ref current } = state.view else {
             panic!("SingleDetails view draw impl got called without being SingleDetails view")
         };
-        let schedule_event = state.schedule.resolve_event(current);
+        let event = state.schedule.resolve_event(current);
 
-        let area = frame.size();
-        draw_metadata_row(area, schedule_event, frame, state)
+        let layout = Layout::default()
+            .constraints([Constraint::Length(1), Constraint::Min(0)])
+            .split(frame.size());
+
+        draw_metadata_row(layout[0], event, frame, state);
+        draw_header(layout[1], event, frame);
     }
 
     fn input(&mut self) -> Result<Option<Action>> {
@@ -135,5 +139,15 @@ fn draw_metadata_row(
     frame.render_widget(
         Paragraph::new(persons).alignment(Alignment::Right),
         layout[1],
+    );
+}
+
+fn draw_header(container: Rect, event: &schedule::Event, frame: &mut Frame<'_>) {
+    let title = Span::raw(&event.title).bold();
+    let subtitle = Span::raw(&event.subtitle).italic();
+    let lines = vec![Line::from(title), Line::from(subtitle)];
+    frame.render_widget(
+        Paragraph::new(lines).alignment(Alignment::Center),
+        container,
     );
 }
