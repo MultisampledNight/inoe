@@ -8,7 +8,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use eyre::{Result};
+use eyre::Result;
 use ratatui::{prelude::*, widgets::*};
 
 use crate::Action;

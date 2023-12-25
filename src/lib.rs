@@ -1,12 +1,11 @@
 pub mod state;
 pub mod ui;
 
-
-
-
 use eyre::{Context, Result};
 use state::Dispatcher;
 use ui::Ui;
+
+pub type DateTime = time::OffsetDateTime;
 
 pub async fn run() -> Result<()> {
     let app = App::new()?;

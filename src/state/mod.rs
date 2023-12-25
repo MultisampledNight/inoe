@@ -1,12 +1,10 @@
-mod schedule;
-mod store;
-
-pub use schedule::Schedule;
-pub use store::{State, Store};
+pub mod schedule;
+pub mod store;
 
 use eyre::Result;
 
 use crate::Action;
+use store::Store;
 
 pub struct Dispatcher {
     store: Store,
