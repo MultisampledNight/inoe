@@ -7,9 +7,9 @@ use ui::Ui;
 
 pub type DateTime = time::OffsetDateTime;
 
-pub async fn run() -> Result<()> {
+pub fn run() -> Result<()> {
     let app = App::new()?;
-    app.run().await
+    app.run()
 }
 
 pub struct App {
@@ -25,7 +25,7 @@ impl App {
         Ok(Self { ui, dispatcher })
     }
 
-    pub async fn run(mut self) -> Result<()> {
+    pub fn run(mut self) -> Result<()> {
         loop {
             let action = self.ui.frame()?;
 
