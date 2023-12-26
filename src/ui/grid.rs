@@ -22,7 +22,7 @@ pub struct View<'state> {
 impl<'state> super::View for View<'state> {
     fn draw(&mut self, frame: &mut Frame<'_>) {
         let grid = ScheduleGrid::new(&self.state.schedule);
-        grid.render(&self.state.schedule, frame, self.state.grid_state.scroll_at);
+        grid.render(&self.state, frame);
     }
 
     fn process(&mut self, event: super::TerminalEvent) -> Option<crate::Action> {
@@ -73,7 +73,7 @@ impl ScheduleGrid {
         grid
     }
 
-    fn render(&self, base: &schedule::Schedule, frame: &mut Frame<'_>, scroll: DateTime) {
+    fn render(&self, state: &State, frame: &mut Frame<'_>) {
         let cell_width = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Ratio(1, 6), Constraint::Min(0)])
@@ -84,15 +84,22 @@ impl ScheduleGrid {
         // rendering the *whole* timeline would be far too laggy
         let relevant_timeline = self
             .timeline
-            .range(scroll..)
+            .range(state.grid_state.scroll_at..)
             .take(usize::from(frame.size().height / 3 + 1));
+
+        let selected = state.selected_event();
 
         let rows = relevant_timeline
             .map(|(timestamp, events)| {
                 iter::once(Cell::new(timestamp.format(DATETIME_FORMAT_LONG).unwrap())).chain(
                     events.iter().map(|id| {
-                        let text = base[id].title.as_str();
-                        Cell::new(wrap(text, cell_width as usize).collect::<Vec<_>>())
+                        let text = state.schedule[id].title.as_str();
+                        let cell = Cell::new(wrap(text, cell_width as usize).collect::<Vec<_>>());
+                        if selected.id == *id {
+                            cell.reversed()
+                        } else {
+                            cell
+                        }
                     }),
                 )
             })
