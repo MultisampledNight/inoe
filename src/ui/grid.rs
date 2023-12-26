@@ -74,17 +74,20 @@ impl ScheduleGrid {
     }
 
     fn render(&self, base: &schedule::Schedule, frame: &mut Frame<'_>, scroll: DateTime) {
-        let total_height = frame.size().height;
-
         let cell_width = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Ratio(1, 5), Constraint::Min(0)])
+            .constraints([Constraint::Ratio(1, 6), Constraint::Min(0)])
             .split(frame.size())[0]
             .width;
 
-        let rows = self
+        // fetch only the relevant part of the timeline
+        // rendering the *whole* timeline would be far too laggy
+        let relevant_timeline = self
             .timeline
-            .iter()
+            .range(scroll..)
+            .take(usize::from(frame.size().height / 3 + 1));
+
+        let rows = relevant_timeline
             .map(|(timestamp, events)| {
                 iter::once(Cell::new(timestamp.format(DATETIME_FORMAT_LONG).unwrap())).chain(
                     events.iter().map(|id| {
@@ -97,6 +100,7 @@ impl ScheduleGrid {
 
         let widths = [
             Constraint::Length(17),
+            Constraint::Length(cell_width),
             Constraint::Length(cell_width),
             Constraint::Length(cell_width),
             Constraint::Length(cell_width),
