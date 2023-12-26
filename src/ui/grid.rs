@@ -10,7 +10,7 @@ use crate::{
         schedule,
         store::{Mode, State},
     },
-    Action, DateTime,
+    Action, DateTime, To,
 };
 
 use super::{wrap, TerminalEvent, DATETIME_FORMAT_LONG};
@@ -28,10 +28,15 @@ impl<'state> super::View for View<'state> {
     fn process(&mut self, event: super::TerminalEvent) -> Option<crate::Action> {
         let action = match event {
             TerminalEvent::Key(KeyEvent {
-                code: KeyCode::Enter,
+                code,
                 kind: KeyEventKind::Press,
                 ..
-            }) => Action::SwitchTo(Mode::Single),
+            }) => match code {
+                KeyCode::Enter => Action::SwitchTo(Mode::Single),
+                KeyCode::Char('k') => Action::Select(To::Up),
+                KeyCode::Char('j') => Action::Select(To::Below),
+                _ => return None,
+            },
             _ => return None,
         };
 

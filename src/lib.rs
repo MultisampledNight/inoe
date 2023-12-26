@@ -76,8 +76,18 @@ impl App {
 #[derive(Copy, Clone, Debug)]
 pub enum Action {
     Exit,
+    Select(To),
     SwitchTo(Mode),
     Scroll(VerticalDirection),
+}
+
+/// Direction but not since the "direction" is taken by ratatui already.
+#[derive(Copy, Clone, Debug)]
+pub enum To {
+    Left,
+    Right,
+    Up,
+    Below,
 }
 
 #[derive(Copy, Clone, Debug)]

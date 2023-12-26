@@ -34,7 +34,7 @@ use time::{format_description::FormatItem, macros::format_description};
 
 use crate::{
     state::store::{Mode, State},
-    Action, VerticalDirection,
+    Action, To, VerticalDirection,
 };
 
 /// Implementation of viewing a specific [`Mode`]. Created for one frame, then destroyed again.
@@ -42,7 +42,7 @@ pub trait View {
     /// Draw this mode in all detail.
     fn draw(&mut self, frame: &mut Frame<'_>);
 
-    /// Process mode-specific input [`TerminalEvent`]s. Common actions like scrolling don't have to be handled.
+    /// Process mode-specific input [`TerminalEvent`]s.
     fn process(&mut self, _event: TerminalEvent) -> Option<Action> {
         None
     }
@@ -105,9 +105,9 @@ impl Ui {
                 code: KeyCode::Char(ch),
                 ..
             }) => match ch {
+                'h' => Action::Select(To::Left),
+                'l' => Action::Select(To::Right),
                 'q' => Action::Exit,
-                'k' => Action::Scroll(VerticalDirection::Up),
-                'j' => Action::Scroll(VerticalDirection::Down),
                 _ => return forward(event),
             },
             TerminalEvent::Mouse(MouseEvent { kind, .. }) => match kind {
