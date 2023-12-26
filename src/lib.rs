@@ -48,16 +48,14 @@ pub struct App {
 impl App {
     pub fn new() -> Result<Self> {
         let config = config::parse();
-        let dispatcher = Dispatcher::new(config)?;
-
-        dbg!(&dispatcher.store.state().schedule);
-        todo!("need to remove this once parsing is somewhat ready")
-
-        /*
+        let dispatcher = Dispatcher::new(&config)?;
         let ui = Ui::new().context("ui creation failure")?;
 
-        Ok(Self { ui, dispatcher })
-        */
+        Ok(Self {
+            config,
+            ui,
+            dispatcher,
+        })
     }
 
     pub fn run(mut self) -> Result<()> {

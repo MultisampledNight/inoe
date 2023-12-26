@@ -10,7 +10,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     fs,
     io::BufReader,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use eyre::{Context, Result};
@@ -65,7 +65,7 @@ pub struct Person {
 }
 
 impl Schedule {
-    pub fn from_xml_file(source: PathBuf) -> Result<Self> {
+    pub fn from_xml_file(source: impl AsRef<Path>) -> Result<Self> {
         let source = fs::File::open(source).context("could not open requested schedule")?;
         let source = BufReader::new(source);
 

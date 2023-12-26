@@ -14,7 +14,7 @@ pub struct State {
 }
 
 impl Store {
-    pub fn new(config: Config) -> Result<Self> {
+    pub fn new(config: &Config) -> Result<Self> {
         Ok(Self {
             state: State::new(config)?,
         })
@@ -32,9 +32,9 @@ impl Update for Store {
 }
 
 impl State {
-    pub fn new(config: Config) -> Result<Self> {
+    pub fn new(config: &Config) -> Result<Self> {
         let schedule =
-            Schedule::from_xml_file(config.schedule).context("schedule construction failure")?;
+            Schedule::from_xml_file(&config.schedule).context("schedule construction failure")?;
         let first_event = schedule
             .first()
             .context("schedule is empty, nothing to display")?;

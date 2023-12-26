@@ -11,7 +11,7 @@ pub struct Dispatcher {
 }
 
 impl Dispatcher {
-    pub fn new(config: Config) -> Result<Self> {
+    pub fn new(config: &Config) -> Result<Self> {
         Ok(Self {
             store: Store::new(config)?,
         })
