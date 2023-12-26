@@ -45,9 +45,14 @@ impl<'state> super::View for View<'state> {
             // TODO: should actually go to the grid view later on
             TerminalEvent::Key(KeyEvent {
                 kind: KeyEventKind::Press,
-                code: KeyCode::Char('q'),
+                code: KeyCode::Char(ch),
                 ..
-            }) => Action::Exit,
+            }) => match ch {
+                'q' => Action::Exit,
+                'j' => Action::Scroll(crate::VerticalDirection::Down),
+                'k' => Action::Scroll(crate::VerticalDirection::Up),
+                _ => return None,
+            },
             _ => return None,
         };
 
@@ -175,9 +180,11 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         // so let's use the textwrap crate instead
         let wrap = |content| {
             let mut opts = Options::new(container.width as usize);
+
             let dictionary =
                 Standard::from_embedded(Language::EnglishUS).expect("embedded dict to be correct");
             opts.word_splitter = WordSplitter::Hyphenation(dictionary);
+
             textwrap::wrap(content, opts).into_iter().map(Span::raw)
         };
 
@@ -185,6 +192,9 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         text.extend(wrap(&self.event.r#abstract));
         text.extend([Span::raw(""), helper_span("description")]);
         text.extend(wrap(&self.event.description));
-        self.frame.render_widget(Paragraph::new(text), container);
+
+        let paragraph = Paragraph::new(text).scroll((self.view.mode_state.scroll_at, 0));
+
+        self.frame.render_widget(paragraph, container);
     }
 }

@@ -21,3 +21,7 @@ impl Dispatcher {
         self.store.update(action);
     }
 }
+
+pub trait Update {
+    fn update(&mut self, action: Action);
+}

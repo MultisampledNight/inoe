@@ -72,4 +72,10 @@ impl App {
 
 pub enum Action {
     Exit,
+    Scroll(VerticalDirection),
+}
+
+enum VerticalDirection {
+    Down,
+    Up,
 }

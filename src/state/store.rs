@@ -1,8 +1,8 @@
 use eyre::{Context, ContextCompat, Result};
 
-use crate::DateTime;
+use crate::{DateTime, VerticalDirection};
 
-use super::{schedule::EventId, schedule::Schedule, Action};
+use super::{schedule::EventId, schedule::Schedule, Action, Update};
 
 pub struct Store {
     state: State,
@@ -10,7 +10,7 @@ pub struct Store {
 
 pub struct State {
     pub schedule: Schedule,
-    pub view: Mode,
+    pub mode: Mode,
 }
 
 impl Store {
@@ -20,10 +20,14 @@ impl Store {
         })
     }
 
-    pub fn update(&mut self, _action: Action) {}
-
     pub fn state(&self) -> &State {
         &self.state
+    }
+}
+
+impl Update for Store {
+    fn update(&mut self, action: Action) {
+        self.state.mode.update(action);
     }
 }
 
@@ -38,7 +42,10 @@ impl State {
             scroll_at: 0,
         });
 
-        Ok(Self { schedule, view })
+        Ok(Self {
+            schedule,
+            mode: view,
+        })
     }
 }
 
@@ -46,6 +53,15 @@ impl State {
 pub enum Mode {
     Grid(GridState),
     Single(SingleState),
+}
+
+impl Update for Mode {
+    fn update(&mut self, action: Action) {
+        match self {
+            Self::Grid(state) => state.update(action),
+            Self::Single(state) => state.update(action),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -56,10 +72,32 @@ pub struct GridState {
     pub selected: EventId,
 }
 
+impl Update for GridState {
+    fn update(&mut self, action: Action) {
+        match action {
+            _ => (),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct SingleState {
     /// Topmost line of where the scroll currently is.
-    pub scroll_at: usize,
+    pub scroll_at: u16,
     /// What event is currently being viewed.
     pub current: EventId,
+}
+
+impl Update for SingleState {
+    fn update(&mut self, action: Action) {
+        match action {
+            Action::Scroll(VerticalDirection::Down) => {
+                self.scroll_at = self.scroll_at.saturating_add(1)
+            }
+            Action::Scroll(VerticalDirection::Up) => {
+                self.scroll_at = self.scroll_at.saturating_sub(1)
+            }
+            _ => (),
+        }
+    }
 }
