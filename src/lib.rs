@@ -1,3 +1,28 @@
+//! I don't even know anymore what I'm doing, I think.
+//!
+//! # Architecture
+//!
+//! A bit of a mix between the [Component architecture] and the [Flux architecture].
+//!
+//! Essentially two-split into
+//!
+//! - [`state`]: Cares about application logic and state, also knowing which pane for
+//!   example the user is currently in through the [`state::store::Mode`] enum.
+//!
+//!   It doesn't have a concept of a "frame" or the like, instead, all modification happens through
+//!   the [`Action`] enum, which acts as a message from the UI to the state.
+//!
+//! - [`ui`]: Cares about drawing things each frame, and getting input to convert it into
+//!   [`Action`]s. For this, the [`ratatui`] and [`crossterm`] crates are leveraged in
+//!   immediate-mode style.
+//!
+//!   While [`ui::Ui`] is held during the whole program lifetime, it holds only things like
+//!   terminal handles or caches. It creates every frame a new [`ui::View`] for the current
+//!   [`state::store::Mode`], drawing it, fetching it for input and destroying it right again.
+//!
+//! [Component architecture]: https://ratatui.rs/concepts/application-patterns/component-architecture/
+//! [Flux architecture]: https://ratatui.rs/concepts/application-patterns/flux-architecture/
+
 pub mod state;
 pub mod ui;
 

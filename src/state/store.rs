@@ -10,7 +10,7 @@ pub struct Store {
 
 pub struct State {
     pub schedule: Schedule,
-    pub view: View,
+    pub view: Mode,
 }
 
 impl Store {
@@ -33,24 +33,30 @@ impl State {
         let first_event = schedule
             .first()
             .context("schedule is empty, nothing to display")?;
-        let view = View::SingleDetails {
+        let view = Mode::Single(SingleState {
             current: first_event.id,
-        };
+        });
 
         Ok(Self { schedule, view })
     }
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum View {
-    GridOverview {
-        /// Topmost point of where the scroll currently is.
-        scroll_at: DateTime,
-        /// What event is currently selected and would be viewed if switched into [`View::Single`] mode.
-        selected: EventId,
-    },
-    SingleDetails {
-        /// What event is currently viewed.
-        current: EventId,
-    },
+pub enum Mode {
+    Grid(GridState),
+    Single(SingleState),
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct GridState {
+    /// Topmost point of where the scroll currently is.
+    pub scroll_at: DateTime,
+    /// What event is currently selected and would be viewed if switched into [`View::Single`] mode.
+    pub selected: EventId,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct SingleState {
+    /// What event is currently being viewed.
+    pub current: EventId,
 }

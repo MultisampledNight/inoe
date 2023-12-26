@@ -1,28 +1,52 @@
+//! UI setup, drawing and layouting logic, as well as event handling.
+//!
+//! The idea is that for each member of [`crate::state::store::View`], there's one corresponding
+//! submodule in this folder, which takes care of drawing one frame in that view and handling input
+//! appropiately.
+//!
+//! All state is actually held in [`crate::state`] by the dispatcher and its store, so the code
+//! here only has to draw and find out what actions to send.
+//!
+//! See the [`crate`] module documentation for details.
+
+mod grid;
+mod single;
+
 use std::{
     io::{stdout, Stdout},
     time::Duration,
 };
 
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyEventKind},
+    event,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
 use eyre::Result;
-use itertools::intersperse;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::prelude::*;
 
 use crate::{
-    state::{
-        schedule,
-        store::{State, View},
-    },
+    state::store::{Mode, State},
     Action,
 };
 
+type TerminalEvent = crossterm::event::Event;
+
+trait View {
+    fn draw(&mut self, frame: &mut Frame<'_>);
+    fn process(&mut self, event: TerminalEvent) -> Option<Action>;
+}
+
+fn map_mode_to_view<'state>(state: &'state State) -> Box<dyn View + 'state> {
+    // could be facilitated with a macro if the manual matching becomes too repetetive
+    match state.view {
+        Mode::Grid(ref mode_state) => Box::new(grid::View { state, mode_state }),
+        Mode::Single(ref mode_state) => Box::new(single::View { state, mode_state }),
+    }
+}
+
 pub struct Ui {
-    /// The [`Option`] is needed since the [`Ui::draw`] method takes it out for a short time, so it can pass down the [`Ui`] mutably.
-    terminal: Option<Terminal<CrosstermBackend<Stdout>>>,
+    terminal: Terminal<CrosstermBackend<Stdout>>,
 }
 
 impl Ui {
@@ -33,9 +57,7 @@ impl Ui {
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
         terminal.clear()?;
 
-        Ok(Self {
-            terminal: Some(terminal),
-        })
+        Ok(Self { terminal })
     }
 
     pub fn clean_up(self) -> Result<()> {
@@ -45,109 +67,25 @@ impl Ui {
     }
 
     pub fn frame(&mut self, state: &State) -> Result<Option<Action>> {
-        self.draw(state)?;
-        self.input()
+        let mut view = map_mode_to_view(state);
+        self.draw(&mut view)?;
+        self.input(&mut view)
     }
 
-    fn draw(&mut self, state: &State) -> Result<()> {
-        let mut terminal = self.terminal.take().unwrap();
-
-        terminal.draw(|frame| match state.view {
-            View::GridOverview { .. } => self.draw_grid_overview(frame, state),
-            View::SingleDetails { .. } => self.draw_single_details(frame, state),
-        })?;
-
-        self.terminal = Some(terminal);
-
+    fn draw<'state>(&mut self, view: &mut Box<dyn View + 'state>) -> Result<()> {
+        self.terminal.draw(|frame| view.draw(frame))?;
         Ok(())
     }
 
-    fn draw_grid_overview(&mut self, _frame: &mut Frame<'_>, _state: &State) {
-        todo!()
-    }
-
-    fn draw_single_details(&mut self, frame: &mut Frame<'_>, state: &State) {
-        let View::SingleDetails { ref current } = state.view else {
-            panic!("SingleDetails view draw impl got called without being SingleDetails view")
-        };
-        let event = state.schedule.resolve_event(current);
-
-        let layout = Layout::default()
-            .constraints([Constraint::Length(1), Constraint::Min(0)])
-            .split(frame.size());
-
-        draw_metadata_row(layout[0], event, frame, state);
-        draw_header(layout[1], event, frame);
-    }
-
-    fn input(&mut self) -> Result<Option<Action>> {
+    fn input<'state>(&mut self, view: &mut Box<dyn View + 'state>) -> Result<Option<Action>> {
         const FRAME_DURATION: Duration = Duration::from_millis(16);
 
         if !event::poll(FRAME_DURATION)? {
             return Ok(None);
         }
+        let event = event::read()?;
+        let action = view.process(event);
 
-        let action = match event::read()? {
-            Event::Key(KeyEvent {
-                kind: KeyEventKind::Press,
-                code: KeyCode::Char('q'),
-                ..
-            }) => Action::Exit,
-            _ => return Ok(None),
-        };
-
-        Ok(Some(action))
+        Ok(action)
     }
-}
-
-fn draw_metadata_row(
-    container: Rect,
-    event: &schedule::Event,
-    frame: &mut Frame<'_>,
-    state: &State,
-) {
-    // the top metadata row
-    let helper_text = Style::new().dark_gray();
-    let position = Line::from(vec![
-        Span::styled("In ", helper_text),
-        Span::raw(event.room.as_str()),
-    ]);
-
-    // the individual persons should be concatenated with commas in-between
-    // but the last comma should actually be "and" instead
-    let last_comma_idx = (event.persons.len() * 2).checked_sub(3);
-    let persons = event
-        .persons
-        .iter()
-        .map(|id| state.schedule.resolve_person(id).name.as_str())
-        .map(|name| Span::raw(name));
-    let persons = intersperse(persons, Span::styled(", ", helper_text))
-        .enumerate()
-        .map(|(idx, part)| match last_comma_idx {
-            Some(last_comma_idx) if last_comma_idx == idx => Span::styled(" and ", helper_text),
-            _ => part,
-        })
-        .collect::<Vec<_>>();
-    let persons = Line::from(persons);
-
-    let layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(position.width() as u16), Constraint::Min(0)])
-        .split(container);
-
-    frame.render_widget(Paragraph::new(position), layout[0]);
-    frame.render_widget(
-        Paragraph::new(persons).alignment(Alignment::Right),
-        layout[1],
-    );
-}
-
-fn draw_header(container: Rect, event: &schedule::Event, frame: &mut Frame<'_>) {
-    let title = Span::raw(&event.title).bold();
-    let subtitle = Span::raw(&event.subtitle).italic();
-    let lines = vec![Line::from(title), Line::from(subtitle)];
-    frame.render_widget(
-        Paragraph::new(lines).alignment(Alignment::Center),
-        container,
-    );
 }
