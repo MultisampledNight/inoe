@@ -1,4 +1,4 @@
-//! One specific event with all its gory details, presented like the first page of a paper..
+//! One specific event with all its gory details, presented like the first page of a paper.
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use itertools::intersperse;
@@ -23,12 +23,8 @@ pub struct View<'state> {
 impl<'state> super::View for View<'state> {
     fn draw(&mut self, frame: &mut Frame<'_>) {
         let layout = Layout::default()
-            .constraints([
-                Constraint::Length(2),
-                Constraint::Length(3),
-                Constraint::Length(3),
-                Constraint::Min(0),
-            ])
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Ratio(1, 4), Constraint::Min(0)])
             .split(frame.size());
 
         let event = self.state.schedule.resolve_event(&self.mode_state.current);
@@ -38,9 +34,8 @@ impl<'state> super::View for View<'state> {
             frame,
         };
 
-        render.metadata_row(layout[0]);
-        render.header(layout[1]);
-        render.timeframe(layout[2]);
+        render.metadata(layout[0]);
+        render.content(layout[1]);
     }
 
     fn process(&mut self, event: super::TerminalEvent) -> Option<crate::Action> {
@@ -65,55 +60,9 @@ struct RenderState<'view, 'state, 'frame, 'life> {
 }
 
 impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
-    fn metadata_row(&mut self, container: Rect) {
-        // the top metadata row
-        let position = Line::from(vec![
-            helper_span("In "),
-            Span::raw(self.event.room.as_str()),
-        ]);
+    fn metadata(&mut self, container: Rect) {
+        let room = Span::raw(self.event.room.as_str());
 
-        // the individual persons should be concatenated with commas in-between
-        // but the last comma should actually be "and" instead
-        let last_comma_idx = (self.event.persons.len() * 2).checked_sub(3);
-        let persons = self
-            .event
-            .persons
-            .iter()
-            .map(|id| self.view.state.schedule.resolve_person(id).name.as_str())
-            .map(|name| Span::raw(name));
-        let persons = intersperse(persons, helper_span(", "))
-            .enumerate()
-            .map(|(idx, part)| match last_comma_idx {
-                Some(last_comma_idx) if last_comma_idx == idx => helper_span(" and "),
-                _ => part,
-            })
-            .collect::<Vec<_>>();
-        let persons = Line::from(persons);
-
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(position.width() as u16), Constraint::Min(0)])
-            .split(container);
-
-        self.frame
-            .render_widget(Paragraph::new(position), layout[0]);
-        self.frame.render_widget(
-            Paragraph::new(persons).alignment(Alignment::Right),
-            layout[1],
-        );
-    }
-
-    fn header(&mut self, container: Rect) {
-        let title = Span::raw(&self.event.title).bold();
-        let subtitle = Span::raw(&self.event.subtitle).italic();
-        let lines = vec![Line::from(title), Line::from(subtitle)];
-        self.frame.render_widget(
-            Paragraph::new(lines).alignment(Alignment::Center),
-            container,
-        );
-    }
-
-    fn timeframe(&mut self, container: Rect) {
         // the short format with only the time is ideal when the event is today
         // the long format should be displayed otherwise
         // that check is done for start/end individually
@@ -139,22 +88,76 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         let duration = humantime::Duration::from(self.event.duration.unsigned_abs());
         let duration = Span::raw(duration.to_string());
 
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+        let vert_layout = Layout::default()
+            .constraints([Constraint::Length(4), Constraint::Min(0)])
             .split(container);
 
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Length(7), Constraint::Min(0)])
+            .split(vert_layout[1]);
+
         self.frame.render_widget(
-            Paragraph::new(vec![
-                Line::from(vec![helper_span("start "), start]),
-                Line::from(vec![helper_span("= "), end]),
-            ])
+            Paragraph::new(
+                ["where", "when", "+", "="]
+                    .into_iter()
+                    .map(|label| vec![helper_span(label), Span::raw(" ")])
+                    .map(Line::from)
+                    .collect::<Vec<_>>(),
+            )
             .alignment(Alignment::Right),
             layout[0],
         );
         self.frame.render_widget(
-            Paragraph::new(vec![Line::from(vec![helper_span(" + "), duration])]),
+            Paragraph::new(
+                [room, start, duration, end]
+                    .into_iter()
+                    .map(Line::from)
+                    .collect::<Vec<_>>(),
+            ),
             layout[1],
+        );
+    }
+
+    fn content(&mut self, container: Rect) {
+        let layout = Layout::default()
+            .constraints([Constraint::Length(5)])
+            .margin(1)
+            .split(container);
+        self.header(layout[0]);
+    }
+
+    fn header(&mut self, container: Rect) {
+        let title = Span::raw(&self.event.title).bold();
+        let subtitle = Span::raw(&self.event.subtitle).italic();
+
+        // the individual persons should be concatenated with commas in-between
+        // but the last comma should actually be "and" instead
+        let last_comma_idx = (self.event.persons.len() * 2).checked_sub(3);
+        let persons = self
+            .event
+            .persons
+            .iter()
+            .map(|id| self.view.state.schedule.resolve_person(id).name.as_str())
+            .map(|name| Span::raw(name));
+        let mut persons = intersperse(persons, helper_span(", "))
+            .enumerate()
+            .map(|(idx, part)| match last_comma_idx {
+                Some(last_comma_idx) if last_comma_idx == idx => helper_span(" and "),
+                _ => part,
+            })
+            .collect::<Vec<_>>();
+        persons.insert(0, helper_span("by "));
+
+        let lines = vec![
+            Line::from(title),
+            Line::from(subtitle),
+            Line::raw(""),
+            Line::from(persons),
+        ];
+        self.frame.render_widget(
+            Paragraph::new(lines).alignment(Alignment::Center),
+            container,
         );
     }
 }
