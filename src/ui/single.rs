@@ -7,10 +7,7 @@ use textwrap::{Options, WordSplitter};
 use time::{macros::format_description, UtcOffset};
 
 use crate::{
-    state::{
-        schedule,
-        store::{SingleState, State},
-    },
+    state::{schedule, store::State},
     DateTime,
 };
 
@@ -18,7 +15,6 @@ use super::helper_span;
 
 pub struct View<'state> {
     pub state: &'state State,
-    pub mode_state: &'state SingleState,
 }
 
 impl<'state> super::View for View<'state> {
@@ -28,7 +24,7 @@ impl<'state> super::View for View<'state> {
             .constraints([Constraint::Ratio(1, 4), Constraint::Min(0)])
             .split(frame.size());
 
-        let event = self.state.schedule.resolve_event(&self.mode_state.current);
+        let event = self.state.selected_event();
         let mut render = RenderState {
             view: self,
             event,
@@ -132,7 +128,7 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
             .event
             .persons
             .iter()
-            .map(|id| self.view.state.schedule.resolve_person(id).name.as_str())
+            .map(|id| self.view.state.schedule[id].name.as_str())
             .map(|name| Span::raw(name));
         let mut persons = intersperse(persons, helper_span(", "))
             .enumerate()
@@ -173,7 +169,7 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         text.extend([Span::raw(""), helper_span("description")]);
         text.extend(wrap(&self.event.description));
 
-        let paragraph = Paragraph::new(text).scroll((self.view.mode_state.scroll_at, 0));
+        let paragraph = Paragraph::new(text).scroll((self.view.state.single_state.scroll_at, 0));
 
         self.frame.render_widget(paragraph, container);
     }

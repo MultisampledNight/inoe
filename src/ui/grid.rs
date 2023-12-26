@@ -2,11 +2,10 @@
 
 use ratatui::{prelude::*, widgets::*};
 
-use crate::state::store::{GridState, State};
+use crate::state::store::State;
 
 pub struct View<'state> {
     pub state: &'state State,
-    pub mode_state: &'state GridState,
 }
 
 impl<'state> super::View for View<'state> {

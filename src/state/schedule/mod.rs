@@ -10,7 +10,8 @@ use std::{
     collections::{BTreeMap, HashMap},
     fs,
     io::BufReader,
-    path::{Path, PathBuf},
+    ops::Index,
+    path::Path,
 };
 
 use eyre::{Context, Result};
@@ -55,6 +56,12 @@ pub struct Event {
     pub persons: Vec<PersonId>,
 }
 
+impl Event {
+    pub fn end(&self) -> DateTime {
+        self.start + self.duration
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PersonId(Uuid);
 
@@ -84,34 +91,44 @@ impl Schedule {
             .first()
             .expect("time map must be consistent with events");
 
-        Some(self.resolve_event(id))
+        Some(&self[id])
     }
+}
 
-    /// Return the corresponding [`Event`] for the given [`EventId`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if the given [`EventId`] is not from this schedule.
-    pub fn resolve_event(&self, id: &EventId) -> &Event {
+impl Index<&EventId> for Schedule {
+    type Output = Event;
+
+    /// May panic or return the wrong event if the given [`EventId`] does not belong to this
+    /// schedule.
+    fn index(&self, id: &EventId) -> &Self::Output {
         self.events
             .get(id)
             .expect("EventId to be from the current schedule")
     }
+}
 
-    /// Return the corresponding [`Person`] for the given [`PersonId`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if the given [`PersonId`] is not from this schedule.
-    pub fn resolve_person(&self, id: &PersonId) -> &Person {
+impl Index<&PersonId> for Schedule {
+    type Output = Person;
+
+    /// May panic or return the wrong event if the given [`PersonId`] does not belong to this
+    /// schedule.
+    fn index(&self, id: &PersonId) -> &Self::Output {
         self.persons
             .get(id)
             .expect("PersonId to be from the current schedule")
     }
 }
 
-impl Event {
-    pub fn end(&self) -> DateTime {
-        self.start + self.duration
+impl Index<&TimeCoord> for Schedule {
+    type Output = Event;
+    fn index(&self, index: &TimeCoord) -> &Self::Output {
+        let id = self.time_map[&index.row][index.idx];
+        &self[&id]
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct TimeCoord {
+    pub row: DateTime,
+    pub idx: usize,
 }

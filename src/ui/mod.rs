@@ -54,8 +54,8 @@ pub trait View {
 fn map_mode_to_view<'state>(state: &'state State) -> Box<dyn View + 'state> {
     // could be facilitated with a macro if the manual matching becomes too repetetive
     match state.mode {
-        Mode::Grid(ref mode_state) => Box::new(grid::View { state, mode_state }),
-        Mode::Single(ref mode_state) => Box::new(single::View { state, mode_state }),
+        Mode::Grid => Box::new(grid::View { state }),
+        Mode::Single => Box::new(single::View { state }),
     }
 }
 

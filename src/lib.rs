@@ -27,9 +27,8 @@ pub mod config;
 pub mod state;
 pub mod ui;
 
-use config::Config;
 use eyre::{Context, Result};
-use state::Dispatcher;
+use state::{store::Mode, Dispatcher};
 use ui::Ui;
 
 pub type DateTime = time::OffsetDateTime;
@@ -40,7 +39,6 @@ pub fn run() -> Result<()> {
 }
 
 pub struct App {
-    config: Config,
     ui: Ui,
     dispatcher: Dispatcher,
 }
@@ -51,11 +49,8 @@ impl App {
         let dispatcher = Dispatcher::new(&config)?;
         let ui = Ui::new().context("ui creation failure")?;
 
-        Ok(Self {
-            config,
-            ui,
-            dispatcher,
-        })
+        // could store config in app if needed
+        Ok(Self { ui, dispatcher })
     }
 
     pub fn run(mut self) -> Result<()> {
@@ -78,11 +73,14 @@ impl App {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum Action {
     Exit,
+    SwitchTo(Mode),
     Scroll(VerticalDirection),
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum VerticalDirection {
     Down,
     Up,
