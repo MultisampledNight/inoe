@@ -1,11 +1,9 @@
 //! One specific event with all its gory details, presented like the first page of a paper.
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
-use hyphenation::{Language, Load, Standard};
 use itertools::intersperse;
 use ratatui::{prelude::*, widgets::*};
-use textwrap::{Options, WordSplitter};
-use time::{macros::format_description, UtcOffset};
+use time::UtcOffset;
 
 use crate::{
     state::{
@@ -15,7 +13,7 @@ use crate::{
     Action, DateTime,
 };
 
-use super::{helper_span, TerminalEvent};
+use super::{helper_span, TerminalEvent, DATETIME_FORMAT_LONG, DATETIME_FORMAT_SHORT};
 
 pub struct View<'state> {
     pub state: &'state State,
@@ -64,8 +62,6 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         // the short format with only the time is ideal when the event is today
         // the long format should be displayed otherwise
         // that check is done for start/end individually
-        let short_format = format_description!("[hour] [minute]");
-        let long_format = format_description!("[year]-[month]-[day]  [hour] [minute]");
         let now = DateTime::now_utc();
 
         let [start, end]: [Span; 2] = [self.event.start, self.event.end()]
@@ -73,8 +69,8 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
             .map(|point| {
                 let is_today = now.date() == point.to_offset(UtcOffset::UTC).date();
                 let format = match is_today {
-                    true => short_format,
-                    false => long_format,
+                    true => DATETIME_FORMAT_SHORT,
+                    false => DATETIME_FORMAT_LONG,
                 };
                 let point = point.format(format).unwrap();
                 Span::raw(point)
@@ -171,15 +167,8 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
     fn text(&mut self, container: Rect) {
         // ratatui seems to perform no wrapping on its own
         // so let's use the textwrap crate instead
-        let wrap = |content| {
-            let mut opts = Options::new(container.width as usize);
 
-            let dictionary =
-                Standard::from_embedded(Language::EnglishUS).expect("embedded dict to be correct");
-            opts.word_splitter = WordSplitter::Hyphenation(dictionary);
-
-            textwrap::wrap(content, opts).into_iter().map(Span::raw)
-        };
+        let wrap = |content| super::wrap(content, container.width as usize);
 
         let mut text = Text::from(helper_span("abstract"));
         text.extend(wrap(&self.event.r#abstract));

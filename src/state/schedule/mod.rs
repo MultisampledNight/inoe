@@ -93,6 +93,11 @@ impl Schedule {
 
         Some(&self[id])
     }
+
+    /// Pure getter.
+    pub fn time_map(&self) -> &BTreeMap<DateTime, Vec<EventId>> {
+        &self.time_map
+    }
 }
 
 impl Index<&EventId> for Schedule {

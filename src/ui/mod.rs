@@ -27,18 +27,15 @@ use crossterm::{
     ExecutableCommand,
 };
 use eyre::Result;
+use hyphenation::{Language, Load, Standard};
 use ratatui::prelude::*;
+use textwrap::{Options, WordSplitter};
+use time::{format_description::FormatItem, macros::format_description};
 
 use crate::{
     state::store::{Mode, State},
     Action, VerticalDirection,
 };
-
-pub type TerminalEvent = crossterm::event::Event;
-
-pub fn helper_span(content: &str) -> Span<'_> {
-    Span::styled(content, Style::new().dark_gray())
-}
 
 /// Implementation of viewing a specific [`Mode`]. Created for one frame, then destroyed again.
 pub trait View {
@@ -151,4 +148,25 @@ fn reset_terminal() -> Result<()> {
     disable_raw_mode()?;
 
     Ok(())
+}
+
+pub type TerminalEvent = crossterm::event::Event;
+
+pub const DATETIME_FORMAT_LONG: &'static [FormatItem<'static>] =
+    format_description!("[year]-[month]-[day]  [hour] [minute]");
+pub const DATETIME_FORMAT_SHORT: &'static [FormatItem<'static>] =
+    format_description!("[hour] [minute]");
+
+pub fn helper_span(content: &str) -> Span<'_> {
+    Span::styled(content, Style::new().dark_gray())
+}
+
+pub fn wrap(content: &str, width: usize) -> impl Iterator<Item = Line> {
+    let mut opts = Options::new(width);
+
+    let dictionary =
+        Standard::from_embedded(Language::EnglishUS).expect("embedded dict to be correct");
+    opts.word_splitter = WordSplitter::Hyphenation(dictionary);
+
+    textwrap::wrap(content, opts).into_iter().map(Line::raw)
 }

@@ -64,11 +64,9 @@ impl State {
         };
         let single_state = SingleState { scroll_at: 0 };
 
-        let mode = Mode::Single;
-
         Ok(Self {
             schedule,
-            mode,
+            mode: Mode::default(),
             selection,
             grid_state,
             single_state,
@@ -107,9 +105,10 @@ impl Update for State {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub enum Mode {
     /// Overview over all events and their chronological order.
+    #[default]
     Grid,
     /// One event in all detail.
     Single,
