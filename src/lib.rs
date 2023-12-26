@@ -23,9 +23,11 @@
 //! [Component architecture]: https://ratatui.rs/concepts/application-patterns/component-architecture/
 //! [Flux architecture]: https://ratatui.rs/concepts/application-patterns/flux-architecture/
 
+pub mod config;
 pub mod state;
 pub mod ui;
 
+use config::Config;
 use eyre::{Context, Result};
 use state::Dispatcher;
 use ui::Ui;
@@ -38,16 +40,24 @@ pub fn run() -> Result<()> {
 }
 
 pub struct App {
+    config: Config,
     ui: Ui,
     dispatcher: Dispatcher,
 }
 
 impl App {
     pub fn new() -> Result<Self> {
+        let config = config::parse();
+        let dispatcher = Dispatcher::new(config)?;
+
+        dbg!(&dispatcher.store.state().schedule);
+        todo!("need to remove this once parsing is somewhat ready")
+
+        /*
         let ui = Ui::new().context("ui creation failure")?;
-        let dispatcher = Dispatcher::new()?;
 
         Ok(Self { ui, dispatcher })
+        */
     }
 
     pub fn run(mut self) -> Result<()> {

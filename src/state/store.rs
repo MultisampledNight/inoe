@@ -1,6 +1,6 @@
 use eyre::{Context, ContextCompat, Result};
 
-use crate::{DateTime, VerticalDirection};
+use crate::{config::Config, DateTime, VerticalDirection};
 
 use super::{schedule::EventId, schedule::Schedule, Action, Update};
 
@@ -14,9 +14,9 @@ pub struct State {
 }
 
 impl Store {
-    pub fn new() -> Result<Self> {
+    pub fn new(config: Config) -> Result<Self> {
         Ok(Self {
-            state: State::new()?,
+            state: State::new(config)?,
         })
     }
 
@@ -32,8 +32,9 @@ impl Update for Store {
 }
 
 impl State {
-    pub fn new() -> Result<Self> {
-        let schedule = Schedule::new().context("schedule construction failure")?;
+    pub fn new(config: Config) -> Result<Self> {
+        let schedule =
+            Schedule::from_xml_file(config.schedule).context("schedule construction failure")?;
         let first_event = schedule
             .first()
             .context("schedule is empty, nothing to display")?;

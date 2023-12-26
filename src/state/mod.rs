@@ -3,7 +3,7 @@ pub mod store;
 
 use eyre::Result;
 
-use crate::Action;
+use crate::{config::Config, Action};
 use store::Store;
 
 pub struct Dispatcher {
@@ -11,9 +11,9 @@ pub struct Dispatcher {
 }
 
 impl Dispatcher {
-    pub fn new() -> Result<Self> {
+    pub fn new(config: Config) -> Result<Self> {
         Ok(Self {
-            store: Store::new()?,
+            store: Store::new(config)?,
         })
     }
 
