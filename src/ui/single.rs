@@ -1,5 +1,6 @@
 //! One specific event with all its gory details, presented like the first page of a paper.
 
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use hyphenation::{Language, Load, Standard};
 use itertools::intersperse;
 use ratatui::{prelude::*, widgets::*};
@@ -7,11 +8,14 @@ use textwrap::{Options, WordSplitter};
 use time::{macros::format_description, UtcOffset};
 
 use crate::{
-    state::{schedule, store::State},
-    DateTime,
+    state::{
+        schedule,
+        store::{Mode, State},
+    },
+    Action, DateTime,
 };
 
-use super::helper_span;
+use super::{helper_span, TerminalEvent};
 
 pub struct View<'state> {
     pub state: &'state State,
@@ -33,6 +37,19 @@ impl<'state> super::View for View<'state> {
 
         render.metadata(layout[0]);
         render.content(layout[1]);
+    }
+
+    fn process(&mut self, event: super::TerminalEvent) -> Option<crate::Action> {
+        let action = match event {
+            TerminalEvent::Key(KeyEvent {
+                code: KeyCode::Char('h'),
+                kind: KeyEventKind::Press,
+                ..
+            }) => Action::SwitchTo(Mode::Grid),
+            _ => return None,
+        };
+
+        Some(action)
     }
 }
 

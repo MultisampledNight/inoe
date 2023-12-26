@@ -78,17 +78,24 @@ impl State {
 impl Update for State {
     fn update(&mut self, action: Action) {
         // generally we can forward all actions
-        // except for scrolling, which is only relevant for the mode the user is currently observing
-        if matches!(action, Action::Scroll(_)) {
-            match self.mode {
+
+        // except for
+        match action {
+            // scrolling, which is only relevant for the mode the user is currently observing
+            Action::Scroll(_) => match self.mode {
                 Mode::Grid => self.grid_state.update(action),
                 Mode::Single => self.single_state.update(action),
+            },
+            // switching modes
+            Action::SwitchTo(new_mode) => {
+                self.mode = new_mode;
             }
-            return;
+            // otherwise, just tell both about it
+            _ => {
+                self.grid_state.update(action);
+                self.single_state.update(action);
+            }
         }
-
-        self.grid_state.update(action);
-        self.single_state.update(action);
     }
 }
 
