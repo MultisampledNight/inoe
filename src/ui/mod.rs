@@ -18,9 +18,9 @@ use std::{
 };
 
 use crossterm::{
-    event,
+    event::{self, DisableMouseCapture, EnableMouseCapture},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    ExecutableCommand,
+    Command, ExecutableCommand,
 };
 use eyre::Result;
 use ratatui::prelude::*;
@@ -55,7 +55,9 @@ pub struct Ui {
 
 impl Ui {
     pub fn new() -> Result<Self> {
-        stdout().execute(EnterAlternateScreen)?;
+        stdout()
+            .execute(EnterAlternateScreen)?
+            .execute(EnableMouseCapture)?;
         enable_raw_mode()?;
 
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
@@ -65,7 +67,9 @@ impl Ui {
     }
 
     pub fn clean_up(self) -> Result<()> {
-        stdout().execute(LeaveAlternateScreen)?;
+        stdout()
+            .execute(DisableMouseCapture)?
+            .execute(LeaveAlternateScreen)?;
         disable_raw_mode()?;
         Ok(())
     }

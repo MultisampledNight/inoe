@@ -1,6 +1,6 @@
 //! One specific event with all its gory details, presented like the first page of a paper.
 
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, MouseEvent, MouseEventKind};
 use hyphenation::{Language, Load, Standard};
 use itertools::intersperse;
 use ratatui::{prelude::*, widgets::*};
@@ -49,8 +49,13 @@ impl<'state> super::View for View<'state> {
                 ..
             }) => match ch {
                 'q' => Action::Exit,
-                'j' => Action::Scroll(crate::VerticalDirection::Down),
                 'k' => Action::Scroll(crate::VerticalDirection::Up),
+                'j' => Action::Scroll(crate::VerticalDirection::Down),
+                _ => return None,
+            },
+            TerminalEvent::Mouse(MouseEvent { kind, .. }) => match kind {
+                MouseEventKind::ScrollUp => Action::Scroll(crate::VerticalDirection::Up),
+                MouseEventKind::ScrollDown => Action::Scroll(crate::VerticalDirection::Down),
                 _ => return None,
             },
             _ => return None,
