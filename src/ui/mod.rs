@@ -18,16 +18,19 @@ use std::{
 };
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture},
+    event::{
+        self, DisableMouseCapture, EnableMouseCapture, KeyCode, KeyEvent, KeyEventKind, MouseEvent,
+        MouseEventKind,
+    },
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-    Command, ExecutableCommand,
+    ExecutableCommand,
 };
 use eyre::Result;
 use ratatui::prelude::*;
 
 use crate::{
     state::store::{Mode, State},
-    Action,
+    Action, VerticalDirection,
 };
 
 pub type TerminalEvent = crossterm::event::Event;
@@ -36,9 +39,15 @@ pub fn helper_span(content: &str) -> Span<'_> {
     Span::styled(content, Style::new().dark_gray())
 }
 
+/// Implementation of viewing a specific [`Mode`]. Created for one frame, then destroyed again.
 pub trait View {
+    /// Draw this mode in all detail.
     fn draw(&mut self, frame: &mut Frame<'_>);
-    fn process(&mut self, event: TerminalEvent) -> Option<Action>;
+
+    /// Process mode-specific input [`TerminalEvent`]s. Common actions like scrolling don't have to be handled.
+    fn process(&mut self, _event: TerminalEvent) -> Option<Action> {
+        None
+    }
 }
 
 fn map_mode_to_view<'state>(state: &'state State) -> Box<dyn View + 'state> {
@@ -92,8 +101,32 @@ impl Ui {
             return Ok(None);
         }
         let event = event::read()?;
-        let action = view.process(event);
 
-        Ok(action)
+        // try to match against "well-known" ones first
+        // so each one doesn't have to handle scrolling again, for example
+
+        let mut forward = |event| Ok(view.process(event));
+
+        let action = match event {
+            // TODO: should actually go to the grid view later on
+            TerminalEvent::Key(KeyEvent {
+                kind: KeyEventKind::Press,
+                code: KeyCode::Char(ch),
+                ..
+            }) => match ch {
+                'q' => Action::Exit,
+                'k' => Action::Scroll(VerticalDirection::Up),
+                'j' => Action::Scroll(VerticalDirection::Down),
+                _ => return forward(event),
+            },
+            TerminalEvent::Mouse(MouseEvent { kind, .. }) => match kind {
+                MouseEventKind::ScrollUp => Action::Scroll(VerticalDirection::Up),
+                MouseEventKind::ScrollDown => Action::Scroll(VerticalDirection::Down),
+                _ => return forward(event),
+            },
+            _ => return forward(event),
+        };
+
+        Ok(Some(action))
     }
 }

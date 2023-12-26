@@ -1,6 +1,5 @@
 //! One specific event with all its gory details, presented like the first page of a paper.
 
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, MouseEvent, MouseEventKind};
 use hyphenation::{Language, Load, Standard};
 use itertools::intersperse;
 use ratatui::{prelude::*, widgets::*};
@@ -12,10 +11,10 @@ use crate::{
         schedule,
         store::{SingleState, State},
     },
-    Action, DateTime,
+    DateTime,
 };
 
-use super::{helper_span, TerminalEvent};
+use super::helper_span;
 
 pub struct View<'state> {
     pub state: &'state State,
@@ -38,30 +37,6 @@ impl<'state> super::View for View<'state> {
 
         render.metadata(layout[0]);
         render.content(layout[1]);
-    }
-
-    fn process(&mut self, event: super::TerminalEvent) -> Option<crate::Action> {
-        let action = match event {
-            // TODO: should actually go to the grid view later on
-            TerminalEvent::Key(KeyEvent {
-                kind: KeyEventKind::Press,
-                code: KeyCode::Char(ch),
-                ..
-            }) => match ch {
-                'q' => Action::Exit,
-                'k' => Action::Scroll(crate::VerticalDirection::Up),
-                'j' => Action::Scroll(crate::VerticalDirection::Down),
-                _ => return None,
-            },
-            TerminalEvent::Mouse(MouseEvent { kind, .. }) => match kind {
-                MouseEventKind::ScrollUp => Action::Scroll(crate::VerticalDirection::Up),
-                MouseEventKind::ScrollDown => Action::Scroll(crate::VerticalDirection::Down),
-                _ => return None,
-            },
-            _ => return None,
-        };
-
-        Some(action)
     }
 }
 

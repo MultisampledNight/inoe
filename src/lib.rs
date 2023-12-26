@@ -75,7 +75,7 @@ pub enum Action {
     Scroll(VerticalDirection),
 }
 
-enum VerticalDirection {
+pub enum VerticalDirection {
     Down,
     Up,
 }
