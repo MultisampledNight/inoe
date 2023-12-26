@@ -13,10 +13,18 @@ pub struct Store {
 }
 
 pub struct State {
+    /// The actual bare data we want to display.
     pub schedule: Schedule,
+
+    /// What mode the user is currently looking at.
     pub mode: Mode,
+
+    /// What event is selected at the moment, and where to find it.
     pub selection: TimeCoord,
+
+    /// State specific to the grid mode.
     pub grid_state: GridState,
+    /// State specific to the single/detail mode.
     pub single_state: SingleState,
 }
 
