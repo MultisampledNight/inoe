@@ -1,8 +1,10 @@
 //! One specific event with all its gory details, presented like the first page of a paper.
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use hyphenation::{Language, Load, Standard};
 use itertools::intersperse;
 use ratatui::{prelude::*, widgets::*};
+use textwrap::{Options, WordSplitter};
 use time::{macros::format_description, UtcOffset};
 
 use crate::{
@@ -168,5 +170,21 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         );
     }
 
-    fn text(&mut self, container: Rect) {}
+    fn text(&mut self, container: Rect) {
+        // ratatui seems to perform no wrapping on its own
+        // so let's use the textwrap crate instead
+        let wrap = |content| {
+            let mut opts = Options::new(container.width as usize);
+            let dictionary =
+                Standard::from_embedded(Language::EnglishUS).expect("embedded dict to be correct");
+            opts.word_splitter = WordSplitter::Hyphenation(dictionary);
+            textwrap::wrap(content, opts).into_iter().map(Span::raw)
+        };
+
+        let mut text = Text::from(helper_span("abstract"));
+        text.extend(wrap(&self.event.r#abstract));
+        text.extend([Span::raw(""), helper_span("description")]);
+        text.extend(wrap(&self.event.description));
+        self.frame.render_widget(Paragraph::new(text), container);
+    }
 }
