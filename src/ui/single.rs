@@ -61,8 +61,6 @@ struct RenderState<'view, 'state, 'frame, 'life> {
 
 impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
     fn metadata(&mut self, container: Rect) {
-        let room = Span::raw(self.event.room.as_str());
-
         // the short format with only the time is ideal when the event is today
         // the long format should be displayed otherwise
         // that check is done for start/end individually
@@ -99,7 +97,7 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
 
         self.frame.render_widget(
             Paragraph::new(
-                ["where", "when", "+", "="]
+                ["where", "when", "+", "=", "", "track", "type"]
                     .into_iter()
                     .map(|label| vec![helper_span(label), Span::raw(" ")])
                     .map(Line::from)
@@ -110,10 +108,18 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
         );
         self.frame.render_widget(
             Paragraph::new(
-                [room, start, duration, end]
-                    .into_iter()
-                    .map(Line::from)
-                    .collect::<Vec<_>>(),
+                [
+                    Span::raw(self.event.room.as_str()),
+                    start,
+                    duration,
+                    end,
+                    Span::raw(""),
+                    Span::raw(self.event.track.as_str()),
+                    Span::raw(self.event.r#type.as_str()),
+                ]
+                .into_iter()
+                .map(Line::from)
+                .collect::<Vec<_>>(),
             ),
             layout[1],
         );
@@ -121,10 +127,11 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
 
     fn content(&mut self, container: Rect) {
         let layout = Layout::default()
-            .constraints([Constraint::Length(5)])
+            .constraints([Constraint::Length(5), Constraint::Min(0)])
             .margin(1)
             .split(container);
         self.header(layout[0]);
+        self.text(layout[1]);
     }
 
     fn header(&mut self, container: Rect) {
@@ -160,4 +167,6 @@ impl<'view, 'state, 'frame, 'life> RenderState<'view, 'state, 'frame, 'life> {
             container,
         );
     }
+
+    fn text(&mut self, container: Rect) {}
 }

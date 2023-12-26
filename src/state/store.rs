@@ -35,6 +35,7 @@ impl State {
             .context("schedule is empty, nothing to display")?;
         let view = Mode::Single(SingleState {
             current: first_event.id,
+            scroll_at: 0,
         });
 
         Ok(Self { schedule, view })
@@ -57,6 +58,8 @@ pub struct GridState {
 
 #[derive(Copy, Clone, Debug)]
 pub struct SingleState {
+    /// Topmost line of where the scroll currently is.
+    pub scroll_at: usize,
     /// What event is currently being viewed.
     pub current: EventId,
 }
