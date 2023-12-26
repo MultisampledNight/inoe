@@ -14,6 +14,7 @@ mod single;
 
 use std::{
     io::{stdout, Stdout},
+    panic,
     time::Duration,
 };
 
@@ -64,22 +65,15 @@ pub struct Ui {
 
 impl Ui {
     pub fn new() -> Result<Self> {
-        stdout()
-            .execute(EnterAlternateScreen)?
-            .execute(EnableMouseCapture)?;
-        enable_raw_mode()?;
-
         let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-        terminal.clear()?;
+        init_terminal(&mut terminal)?;
+        install_panic_hook();
 
         Ok(Self { terminal })
     }
 
     pub fn clean_up(self) -> Result<()> {
-        stdout()
-            .execute(DisableMouseCapture)?
-            .execute(LeaveAlternateScreen)?;
-        disable_raw_mode()?;
+        reset_terminal()?;
         Ok(())
     }
 
@@ -129,4 +123,32 @@ impl Ui {
 
         Ok(Some(action))
     }
+}
+
+fn init_terminal<B: Backend>(terminal: &mut Terminal<B>) -> Result<()> {
+    enable_raw_mode()?;
+    stdout()
+        .execute(EnterAlternateScreen)?
+        .execute(EnableMouseCapture)?;
+    terminal.clear()?;
+
+    Ok(())
+}
+
+fn install_panic_hook() {
+    let original_hook = panic::take_hook();
+
+    panic::set_hook(Box::new(move |panic| {
+        reset_terminal().unwrap();
+        original_hook(panic);
+    }))
+}
+
+fn reset_terminal() -> Result<()> {
+    stdout()
+        .execute(DisableMouseCapture)?
+        .execute(LeaveAlternateScreen)?;
+    disable_raw_mode()?;
+
+    Ok(())
 }
