@@ -42,7 +42,7 @@ impl<'state> super::View for View<'state> {
     fn process(&mut self, event: super::TerminalEvent) -> Option<crate::Action> {
         let action = match event {
             TerminalEvent::Key(KeyEvent {
-                code: KeyCode::Char('h'),
+                code: KeyCode::Esc | KeyCode::Enter,
                 kind: KeyEventKind::Press,
                 ..
             }) => Action::SwitchTo(Mode::Grid),
