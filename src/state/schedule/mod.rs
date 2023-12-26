@@ -1,8 +1,10 @@
 //! Parsing the XML into something usable in Rust.
 //!
 //! Note that anytime `Id` is mentioned, actually the `guid` attribute is meant, **not** the `id` one.
+//! The pipeline is `XML` → [`model::Schedule`] → [`convert`]'s [`From`] impl → [`Schedule`].
 
-mod model;
+pub mod convert;
+pub mod model;
 
 use std::{
     collections::{BTreeMap, HashMap},
@@ -17,7 +19,7 @@ use uuid::Uuid;
 
 use crate::DateTime;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Schedule {
     events: HashMap<EventId, Event>,
     persons: HashMap<PersonId, Person>,
@@ -46,7 +48,8 @@ pub struct Event {
 
     pub language: String,
     pub url: String,
-    pub feedback_url: String,
+    pub feedback_url: Option<String>,
+    /// Displayed text is key, URL is value.
     pub links: BTreeMap<String, String>,
 
     pub persons: Vec<PersonId>,
@@ -66,11 +69,10 @@ impl Schedule {
         let source = fs::File::open(source).context("could not open requested schedule")?;
         let source = BufReader::new(source);
 
-        let raw: model::Schedule =
-            quick_xml::de::from_reader(source).context("could not parse schedule")?;
+        let model = model::parse(source).context("could not parse schedule into model")?;
+        let schedule = model.into();
 
-        dbg!(raw);
-        todo!()
+        Ok(schedule)
     }
 
     /// Returns the first event in this schedule, or `None` if the schedule contains no events.

@@ -1,8 +1,11 @@
 //! Parse the XML by first throwing it into the appropiate serde mapping, then walking through
 //! that mapping and extracting what we actually need.
 
+use std::io::BufRead;
+
+use eyre::Result;
 use serde::Deserialize;
-use time::{OffsetDateTime, Time};
+use time::Time;
 use uuid::Uuid;
 
 use crate::DateTime;
@@ -13,6 +16,11 @@ time::serde::format_description!(
     OffsetDateTime,
     "[year]-[month]-[day] [hour]:[minute]"
 );
+
+pub fn parse<R: BufRead>(source: R) -> Result<Schedule> {
+    let schedule = quick_xml::de::from_reader(source)?;
+    Ok(schedule)
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Schedule {
@@ -81,12 +89,16 @@ pub struct Event {
     pub r#abstract: String,
     pub description: String,
     pub persons: Persons,
+
+    pub url: String,
+    pub feedback_url: Option<String>,
+    pub links: Links,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Persons {
-    #[serde(default)]
-    pub person: Vec<Person>,
+    #[serde(rename = "person", default)]
+    pub persons: Vec<Person>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -95,4 +107,18 @@ pub struct Person {
     pub guid: Uuid,
     #[serde(rename = "$value")]
     pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Links {
+    #[serde(rename = "link", default)]
+    pub links: Vec<Link>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Link {
+    #[serde(rename = "@href")]
+    pub href: String,
+    #[serde(rename = "$value")]
+    pub display: String,
 }
