@@ -1,6 +1,6 @@
 //! UI setup, drawing and layouting logic, as well as event handling.
 //!
-//! The idea is that for each member of [`crate::state::store::View`], there's one corresponding
+//! The idea is that for each variant of [`crate::state::store::Mode`], there's one corresponding
 //! submodule in this folder, which takes care of drawing one frame in that view and handling input
 //! appropiately.
 //!
@@ -30,9 +30,13 @@ use crate::{
     Action,
 };
 
-type TerminalEvent = crossterm::event::Event;
+pub type TerminalEvent = crossterm::event::Event;
 
-trait View {
+pub fn helper_span(content: &str) -> Span<'_> {
+    Span::styled(content, Style::new().dark_gray())
+}
+
+pub trait View {
     fn draw(&mut self, frame: &mut Frame<'_>);
     fn process(&mut self, event: TerminalEvent) -> Option<Action>;
 }

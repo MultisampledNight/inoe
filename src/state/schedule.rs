@@ -78,7 +78,7 @@ impl Schedule {
         let event = Event {
             id: event_id,
             start: event_start,
-            duration: Duration::new(5 * 60, 0),
+            duration: Duration::new(3 * 30 * 60, 0),
             title: "Shaving yaks".to_string(),
             subtitle: "Important. I think.".to_string(),
             r#abstract: "We shave yaks, which is somewhat common in software development.".to_string(),
@@ -138,7 +138,7 @@ impl Schedule {
 }
 
 impl Event {
-    fn end(&self) -> DateTime {
+    pub fn end(&self) -> DateTime {
         self.start + self.duration
     }
 }

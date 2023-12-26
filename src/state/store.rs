@@ -51,7 +51,7 @@ pub enum Mode {
 pub struct GridState {
     /// Topmost point of where the scroll currently is.
     pub scroll_at: DateTime,
-    /// What event is currently selected and would be viewed if switched into [`View::Single`] mode.
+    /// What event is currently selected and would be viewed if switched into [`Mode::Single`].
     pub selected: EventId,
 }
 
