@@ -119,7 +119,7 @@ impl ScheduleGrid {
             Constraint::Length(cell_width),
         ];
 
-        let mut table_state = TableState::new();
+        let mut table_state = TableState::new().with_selected(Some(state.selected_row_num));
 
         frame.render_stateful_widget(Table::new(rows, widths), frame.size(), &mut table_state);
     }
