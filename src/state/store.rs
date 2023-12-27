@@ -22,7 +22,6 @@ pub struct State {
 
     /// What event is selected at the moment, and where to find it.
     pub selection: TimeCoord,
-    pub selected_row_num: usize,
 
     /// State specific to the grid mode.
     pub grid_state: GridState,
@@ -70,7 +69,6 @@ impl State {
             schedule,
             mode: Mode::default(),
             selection,
-            selected_row_num: 0,
             grid_state,
             single_state,
         })
@@ -116,15 +114,10 @@ impl State {
 
                 // otherwise we're good! let's set it
                 self.selection.row = *target_row;
+                self.grid_state.scroll_at = *target_row;
                 self.selection.idx = match row_diff {
-                    1 => {
-                        self.selected_row_num += row_diff as usize;
-                        0
-                    }
-                    -1 => {
-                        self.selected_row_num -= row_diff as usize;
-                        target_events.len() - 1
-                    }
+                    1 => 0,
+                    -1 => target_events.len() - 1,
                     _ => unreachable!(),
                 }
             }

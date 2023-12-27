@@ -2,6 +2,9 @@
 
 TUI viewer for the XML version of the [37C3 Fahrplan].
 
+**Note:** It's very buggy atm. Chances are it'll behave in unexpected ways, especially the grid
+view is a bit of questionable quality.
+
 ## Installation
 
 [Install Rust], then
