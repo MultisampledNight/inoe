@@ -1,6 +1,7 @@
 use eyre::{Context, ContextCompat, Result};
+use ratatui::layout::Direction;
 
-use crate::{config::Config, DateTime, VerticalDirection};
+use crate::{config::Config, DateTime, To, VerticalDirection};
 
 use super::{
     schedule::TimeCoord,
@@ -79,6 +80,49 @@ impl State {
     pub fn selected_event(&self) -> &schedule::Event {
         &self.schedule[&self.selection]
     }
+
+    fn scroll(&mut self, direction: Direction, amount: isize) {
+        if amount == 0 {
+            // valid, but no effect
+            return;
+        }
+
+        let current_line = self
+            .schedule
+            .time_map()
+            .get(&self.selection.row)
+            .expect("selected row to be valid");
+
+        match direction {
+            Direction::Horizontal => {
+                let new_idx = self.selection.idx as isize + amount;
+
+                if (0..current_line.len() as isize).contains(&new_idx) {
+                    // still in the line! just set it
+                    self.selection.idx = new_idx as usize;
+                    return;
+                }
+
+                // oh well, guess we need to adjust the line
+                let row_diff = new_idx.signum();
+                let target = self.schedule.relative(row_diff, self.selection.row);
+
+                let Some((target_row, target_events)) = target else {
+                    // oh no, out of range! let's just stay where we are then
+                    return;
+                };
+
+                // otherwise we're good! let's set it
+                self.selection.row = *target_row;
+                self.selection.idx = match row_diff {
+                    1 => 0,
+                    -1 => target_events.len() - 1,
+                    _ => unreachable!(),
+                }
+            }
+            Direction::Vertical => todo!(),
+        }
+    }
 }
 
 impl Update for State {
@@ -96,6 +140,13 @@ impl Update for State {
             Action::SwitchTo(new_mode) => {
                 self.mode = new_mode;
             }
+            // changing event selection
+            Action::Select(dir) => match dir {
+                To::Left => self.scroll(Direction::Horizontal, -1),
+                To::Right => self.scroll(Direction::Horizontal, 1),
+                To::Up => self.scroll(Direction::Vertical, -1),
+                To::Below => self.scroll(Direction::Vertical, 1),
+            },
             // otherwise, just tell both about it
             _ => {
                 self.grid_state.update(action);

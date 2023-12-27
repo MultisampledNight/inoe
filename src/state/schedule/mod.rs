@@ -14,6 +14,7 @@ use std::{
     path::Path,
 };
 
+use either::Either;
 use eyre::{Context, Result};
 use time::Duration;
 use uuid::Uuid;
@@ -82,6 +83,11 @@ impl Schedule {
         Ok(schedule)
     }
 
+    /// Pure getter.
+    pub fn time_map(&self) -> &BTreeMap<DateTime, Vec<EventId>> {
+        &self.time_map
+    }
+
     /// Returns the first event in this schedule, or `None` if the schedule contains no events.
     pub fn first(&self) -> Option<&Event> {
         let id = self
@@ -94,9 +100,31 @@ impl Schedule {
         Some(&self[id])
     }
 
-    /// Pure getter.
-    pub fn time_map(&self) -> &BTreeMap<DateTime, Vec<EventId>> {
-        &self.time_map
+    /// Returns the requested _n_-th date and events after to the given date.
+    /// Negative _n_ result in the date and events _before_ the given date.
+    ///
+    /// Returns [`None`] if one of
+    ///
+    /// 1. there is no such event (exceeded range of available events)
+    /// 2. `n == 0` and `to` doesn't point to an existing timeslot start
+    pub fn relative(&mut self, n: isize, to: DateTime) -> Option<(&DateTime, &Vec<EventId>)> {
+        // see which direction we need to look to
+        let mut iter = match n.signum() {
+            -1 => {
+                // negative, so _before_
+                Either::Left(self.time_map.range(..to).rev())
+            }
+            1 => {
+                // positive, so _after_
+                Either::Right(self.time_map.range(to..))
+            }
+            0 => return self.time_map.get_key_value(&to),
+            _ => unreachable!("signum never returns outside of [-1, 1]"),
+        };
+
+        let n = n.abs() as usize;
+
+        iter.nth(n)
     }
 }
 
