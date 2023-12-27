@@ -10,6 +10,22 @@ TUI viewer for the XML version of the [37C3 Fahrplan].
 cargo install --git https://github.com/MultisampledNight/inoe
 ```
 
+## Usage
+
+Launch it with the path to a schedule file downloaded from https://fahrplan.events.ccc.de/congress/2023/fahrplan/schedule.xml, as in
+
+```sh
+inoe schedule.xml
+```
+
+There's 2 view modes:
+
+1. The **grid** mode, which is also the default. Here, you get a handy overview over all events.
+   Select an event using Vim keys and switch into **single** mode with <kbd>Enter</kbd>.
+2. The **single** mode. Here, you get to look at one event in detail. You can still navigate the
+   events with the Vim keys, but <kbd>j</kbd> and <kbd>k</kbd> can be used for scrolling the text
+   instead.
+
 ## FAQ
 
 ### Name
