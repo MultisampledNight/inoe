@@ -79,10 +79,13 @@ impl ScheduleGrid {
     }
 
     fn render(&self, state: &State, frame: &mut Frame<'_>) {
+        let mut widths = vec![Constraint::Length(17)];
+        widths.extend(iter::repeat(Constraint::Ratio(1, 9)).take(7));
+
         let cell_width = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Ratio(1, 6), Constraint::Min(0)])
-            .split(frame.size())[0]
+            .constraints(&widths)
+            .split(frame.size())[1]
             .width;
 
         // fetch only the relevant part of the timeline
@@ -109,15 +112,6 @@ impl ScheduleGrid {
                 )
             })
             .map(|cells| Row::new(cells).height(3));
-
-        let widths = [
-            Constraint::Length(17),
-            Constraint::Length(cell_width),
-            Constraint::Length(cell_width),
-            Constraint::Length(cell_width),
-            Constraint::Length(cell_width),
-            Constraint::Length(cell_width),
-        ];
 
         let mut table_state = TableState::new();
 
